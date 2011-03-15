@@ -104,7 +104,7 @@ class FrelonTacoAcq(TacoCcdAcq):
     @TACO_SERVER_FUNCT
     def setTrigger(self, ext_trig):
         deb.Param('Setting trigger: %s' % ext_trig)
-        exp_time = self.m_acq.getExpTime()
+        exp_time = self.getExpTime()
         if ext_trig == 0:
             trig_mode = IntTrig
         elif ext_trig == 1:
@@ -139,11 +139,26 @@ class FrelonTacoAcq(TacoCcdAcq):
     
     @TACO_SERVER_FUNCT
     def setExpTime(self, exp_time):
-        self.m_acq.setExpTime(exp_time)
+        deb.Param('Setting exp. time: %s' % exp_time)
+        trig_mode = self.m_acq.getTriggerMode()
+        if exp_time == 0:
+            if trig_mode == IntTrig:
+                raise Exception, 'Invalid NULL exp_time: trigger is internal'
+            self.m_acq.setTriggerMode(ExtGate)
+        else:
+            if trig_mode == ExtGate:
+                self.m_acq.setTriggerMode(ExtTrigSingle)
+            self.m_acq.setExpTime(exp_time)
     
     @TACO_SERVER_FUNCT
     def getExpTime(self):
-        return self.m_acq.getExpTime()
+        trig_mode = self.m_acq.getTriggerMode()
+        if trig_mode == ExtGate:
+            exp_time = 0
+        else:
+            exp_time = self.m_acq.getExpTime()
+        deb.Return('Getting Exp. time: %s' % exp_time)
+        return exp_time
 
     @TACO_SERVER_FUNCT
     def setBin(self, bin):
@@ -361,7 +376,7 @@ class FrelonTacoAcq(TacoCcdAcq):
 
     @TACO_SERVER_FUNCT
     def readCcdParams(self):
-        exp_time = self.m_acq.getExpTime()
+        exp_time = self.getExpTime()
         threshold = 0
         calib_intensity = -1
         max_frame_dim = self.m_acq.getFrameDim(max_dim=True)
@@ -377,6 +392,8 @@ class FrelonTacoAcq(TacoCcdAcq):
                       is_live]
         
         beam_params = self.readBeamParams()
+        if exp_time == 0:
+            beam_params[19] = 0
         ccd_params += beam_params
         deb.Return('Getting CCD params: %s' % ccd_params)
         return ccd_params
