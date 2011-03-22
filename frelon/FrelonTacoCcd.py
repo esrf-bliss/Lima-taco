@@ -204,7 +204,7 @@ class FrelonTacoAcq(TacoCcdAcq):
 
     @TACO_SERVER_FUNCT
     def getFilePar(self):
-        pars = self.m_acq.getParameters()
+        pars = self.m_acq.getFilePar()
         overwrite = (pars.overwritePolicy == CtSaving.Overwrite)
         over_str = (overwrite and 'yes') or 'no'
         index_format = '%04d'
