@@ -227,8 +227,7 @@ class FrelonTacoAcq(TacoCcdAcq):
             if val[-1] == ';':
                 val = val[:-1].strip()
             header_map[key] = val
-        ct_saving = self.m_acq.getSavingControl()
-        ct_saving.setCommonHeader(header_map)
+        self.m_acq.setCommonFileHeader(header_map)
         
     @TACO_SERVER_FUNCT
     def writeFile(self, frame_nb):
