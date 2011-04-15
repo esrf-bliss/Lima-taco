@@ -270,23 +270,31 @@ class FrelonTacoAcq(TacoCcdAcq):
     def setHwPar(self, hw_par_str):
         hw_par = map(int, string.split(hw_par_str))
         deb.Param('Setting hw par: %s' % hw_par)
-        kin_win_size, kin_line_beg, kin_stripes = self.m_acq.getKinPars()
+        kin_win_size, kin_line_beg, kin_stripes = self.getKinPars()
         flip_mode, kin_line_beg, kin_stripes, d0, roi_mode_int = hw_par
         flip = Flip(flip_mode >> 1, flip_mode & 1)
         self.m_acq.setFlip(flip)
         roi_mode = Frelon.RoiMode(roi_mode_int)
         self.m_acq.setRoiMode(roi_mode)
         if roi_mode == Frelon.Kinetic:
-            self.m_acq.setKinPars(kin_win_size, kin_line_beg, kin_stripes)
+            max_frame_dim = self.getFrameDim(max_dim=True)
+            frame_height = max_frame_dim.getSize().getHeight()
+            if kin_line_beg + kin_win_size > frame_height:
+                kin_win_size = frame_height - kin_line_beg
+                bin_y = self.m_acq.getBin().getY()
+                kin_win_size = (kin_win_size / bin_y) * bin_y
+                deb.Trace('Re-adjusting kin_win_size to %d to fit chip' %
+                          kin_win_size)
+            self.setKinPars(kin_win_size, kin_line_beg, kin_stripes)
         else:
-            deb.Warning("Ingoring Kinetic parameters")
+            deb.Warning('Ingoring Kinetic parameters')
         
     @TACO_SERVER_FUNCT
     def getHwPar(self):
         flip = self.m_acq.getFlip()
         flip_mode = flip.x << 1 | flip.y
         roi_mode = self.m_acq.getRoiMode()
-        kin_win_size, kin_line_beg, kin_stripes = self.m_acq.getKinPars()
+        kin_win_size, kin_line_beg, kin_stripes = self.getKinPars()
         hw_par = [flip_mode, kin_line_beg, kin_stripes, 0, roi_mode]
         deb.Return('Getting hw par: %s' % hw_par)
         hw_par_str = string.join(map(str, hw_par))
@@ -316,15 +324,52 @@ class FrelonTacoAcq(TacoCcdAcq):
     @TACO_SERVER_FUNCT
     def setKinWinSize(self, kin_win_size):
         deb.Param('Setting the kinetics window size: %s' % kin_win_size)
-        prev_win_size, kin_line_beg, kin_stripes = self.m_acq.getKinPars()
-        self.m_acq.setKinPars(kin_win_size, kin_line_beg, kin_stripes)
+        prev_win_size, kin_line_beg, kin_stripes = self.getKinPars()
+        self.setKinPars(kin_win_size, kin_line_beg, kin_stripes)
     
     @TACO_SERVER_FUNCT
     def getKinWinSize(self):
-        kin_win_size, kin_line_beg, kin_stripes = self.m_acq.getKinPars()
+        kin_win_size, kin_line_beg, kin_stripes = self.getKinPars()
         deb.Return('Getting the kinetics window size: %s' % kin_win_size)
         return kin_win_size
-    
+
+    @TACO_SERVER_FUNCT
+    def setKinPars(self, kin_win_size, kin_line_beg, kin_stripes):
+        deb.Param('Setting kin pars: ' +
+                  'kin_win_size=%s, kin_line_beg=%s, kin_stripes=%s' % \
+                  (kin_win_size, kin_line_beg, kin_stripes))
+        if kin_stripes > 1:
+            deb.Warning('Ignoring kin_stripes=%d' % kin_stripes)
+            
+        bin = self.m_acq.getBin()
+        if kin_win_size % bin.getY() != 0:
+            msg = 'Invalid kinetics window size (%d): ' % kin_win_size + \
+                  'must be multiple of vert. bin (%d)' % bin.getY()
+            raise Exception, msg
+
+        roi = self.m_acq.getRoi()
+        roi = roi.getUnbinned(bin)
+        tl = Point(roi.getTopLeft().x, kin_line_beg)
+        size = Size(roi.getSize().getWidth(), kin_win_size)
+        roi = Roi(tl, size)
+        roi = roi.getBinned(bin)
+        self.m_acq.setRoi(roi)
+
+        self.m_acq.setRoiLineBegin(kin_line_beg)
+        
+    @TACO_SERVER_FUNCT
+    def getKinPars(self):
+        bin = self.m_acq.getBin()
+        roi = self.m_acq.getRoi()
+        roi = roi.getUnbinned(bin)
+        kin_win_size = roi.getSize().getHeight()
+        kin_line_beg = self.m_acq.getRoiLineBegin()
+        kin_stripes = 1
+        deb.Return('Getting kin pars: ' +
+                   'kin_win_size=%s, kin_line_beg=%s, kin_stripes=%s' % \
+                   (kin_win_size, kin_line_beg, kin_stripes))
+        return kin_win_size, kin_line_beg, kin_stripes
+
     @TACO_SERVER_FUNCT
     def startAcq(self):
         self.m_acq.startAcq()
