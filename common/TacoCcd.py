@@ -239,6 +239,8 @@ class TacoCcdAcq(TacoServer):
                                  'stopAcq', 'DevCcdStop'],
         DevCcdRead:		[D_VAR_LONGARR, D_OPAQUE_TYPE,
                                  'readFrame', 'DevCcdRead'],
+        DevCcdReadAll:		[D_LONG_TYPE, D_OPAQUE_TYPE,
+                                 'readConcatFrames', 'DevCcdReadAll'],
         DevCcdLive:		[D_VOID_TYPE, D_VOID_TYPE,
                                  'startLive', 'DevCcdLive'],
         DevCcdGetCurrent:	[D_VOID_TYPE, D_LONG_TYPE, 
@@ -489,7 +491,25 @@ class TacoCcdAcq(TacoServer):
         if frame_size != frame_dim.getMemSize():
             raise ValueError, ('Client expects %d bytes, frame has %d' % \
                                (frame_size, frame_dim.getMemSize()))
-        shape = (frame_dim.getHeight(), frame_dim.getWidth())
+        size = frame_dim.getSize()
+        shape = (size.getHeight(), size.getWidth())
+        data = N.zeros(shape, N.uint16)
+        s = data.tostring()
+        if len(s) != frame_size:
+            raise ValueError, ('Client expects %d bytes, data str has %d' % \
+                               (frame_size, len(s)))
+        return s
+
+    @TACO_SERVER_FUNCT
+    def readConcatFrames(self, frame_size):
+        frame_dim = self.getFrameDim()
+        nb_frames = self.getNbFrames()
+        frame_dim *= Point(1, nb_frames)
+        if frame_size != frame_dim.getMemSize():
+            raise ValueError, ('Client expects %d bytes, concat. frames have' \
+                               ' %d' % (frame_size, frame_dim.getMemSize()))
+        size = frame_dim.getSize()
+        shape = (size.getHeight(), size.getWidth())
         data = N.zeros(shape, N.uint16)
         s = data.tostring()
         if len(s) != frame_size:

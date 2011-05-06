@@ -132,6 +132,8 @@ class FrelonTacoAcq(TacoCcdAcq):
     @TACO_SERVER_FUNCT
     def setNbFrames(self, nb_frames):
         self.m_acq.setNbFrames(nb_frames)
+        if self.m_acq.getStripeConcat():
+            self.m_acq.setNbConcatFrames(nb_frames)
     
     @TACO_SERVER_FUNCT
     def getNbFrames(self):
@@ -244,6 +246,8 @@ class FrelonTacoAcq(TacoCcdAcq):
     @TACO_SERVER_FUNCT
     def setMode(self, mode):
         deb.Param('Setting mode: %s (0x%x)' % (mode, mode))
+        stripe_concat = (mode & self.StripeConcat) != 0
+        self.m_acq.setStripeConcat(stripe_concat)
         live_display = (mode & self.LiveDisplay) != 0
         self.m_acq.setLiveDisplay(live_display)
         auto_save = (mode & self.AutoSave) != 0
@@ -255,6 +259,8 @@ class FrelonTacoAcq(TacoCcdAcq):
     @TACO_SERVER_FUNCT
     def getMode(self):
         mode = 0
+        if self.m_acq.getStripeConcat():
+            mode |= self.StripeConcat
         if self.m_acq.getLiveDisplay():
             mode |= self.LiveDisplay
         if self.m_acq.getAutosave():
@@ -386,12 +392,22 @@ class FrelonTacoAcq(TacoCcdAcq):
         if frame_size != frame_dim.getMemSize():
             raise ValueError, ('Client expects %d bytes, frame has %d' % \
                                (frame_size, frame_dim.getMemSize()))
-        s = self.m_acq.readFrame(frame_nb)
+        s = self.m_acq.readFrames(frame_nb, 1)
         if len(s) != frame_size:
             raise ValueError, ('Client expects %d bytes, data str has %d' % \
                                (frame_size, len(s)))
         return s
     
+    @TACO_SERVER_FUNCT
+    def readConcatFrames(self, frame_size):
+        frame_dim = self.getFrameDim()
+        nb_frames = frame_size / frame_dim.getMemSize()
+        s = self.m_acq.readFrames(0, nb_frames)
+        if len(s) != frame_size:
+            raise ValueError, ('Client expects %d bytes, data str has %d' % \
+                               (frame_size, len(s)))
+        return s
+
     @TACO_SERVER_FUNCT
     def startLive(self):
         self.m_acq.startLive()
