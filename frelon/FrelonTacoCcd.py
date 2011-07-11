@@ -69,8 +69,8 @@ class FrelonTacoAcq(TacoCcdAcq):
             msg = 'Acquisition error: %s' % (ct_status)
             end = index(msg, ', ImageCounters')
             msg = msg[:end] + '>'
-            ct.resetStatus(True)
-            ct.stopAcq()
+            self.m_acq.resetStatus()
+            self.m_acq.stopAcq()
             raise Exception, msg
         deb.Return('Device state: 0x%08x (%d)' % (self.state, self.state))
         return self.state
