@@ -188,7 +188,23 @@ class FrelonTacoAcq(TacoCcdAcq):
     @TACO_SERVER_FUNCT
     def setFilePar(self, par_arr):
         deb.Param('Setting file pars: %s' % par_arr)
-        pars = self.m_acq.getFilePar()
+        stream_idx, active = '0', '1'
+        self.setExtFilePar([stream_idx, active] + par_arr)
+
+    @TACO_SERVER_FUNCT
+    def getFilePar(self):
+        stream_idx = '0'
+        par_arr = self.getExtFilePar(stream_idx)[2:]
+        deb.Return('Getting file pars: %s' % par_arr)
+        return par_arr
+
+    @TACO_SERVER_FUNCT
+    def setExtFilePar(self, par_arr):
+        stream_idx, active = map(int, par_arr[0:2])
+        par_arr = par_arr[2:]
+        deb.Param('Setting stream %d ext. pars: act=%s, %s' %
+                  (stream_idx, active, par_arr))
+        pars = self.m_acq.getFileStreamPar(stream_idx)
         pars.directory  = par_arr[0]
         pars.prefix     = par_arr[1]
         pars.suffix     = par_arr[2]
@@ -202,18 +218,21 @@ class FrelonTacoAcq(TacoCcdAcq):
             pars.fileFormat = CtSaving.EDF
         else:
             pars.fileFormat = CtSaving.RAW
-        self.m_acq.setFilePar(pars)
+        self.m_acq.setFileStreamAct(active, stream_idx)
+        self.m_acq.setFileStreamPar(pars, stream_idx)
 
     @TACO_SERVER_FUNCT
-    def getFilePar(self):
-        pars = self.m_acq.getFilePar()
+    def getExtFilePar(self, stream_idx_str):
+        stream_idx = int(stream_idx_str)
+        active = self.m_acq.getFileStreamAct(stream_idx)
+        pars = self.m_acq.getFileStreamPar(stream_idx)
         overwrite = (pars.overwritePolicy == CtSaving.Overwrite)
-        over_str = (overwrite and 'yes') or 'no'
-        index_format = '%04d'
-        arr = [pars.directory, pars.prefix, pars.suffix, pars.nextNumber,
-               index_format, over_str]
+        overwrite = (overwrite and 'yes') or 'no'
+        arr = [stream_idx, int(active), pars.directory, pars.prefix,
+               pars.suffix, pars.nextNumber, pars.fileFormat, overwrite]
         par_arr = map(str, arr)
-        deb.Return('Getting file pars: %s' % par_arr)
+        deb.Return('Stream %d ext. pars: act=%s, %s' %
+                   (stream_idx, active, par_arr[2:]))
         return par_arr
 
     @TACO_SERVER_FUNCT

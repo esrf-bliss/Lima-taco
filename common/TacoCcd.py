@@ -99,6 +99,9 @@ DevCcdSetThumbnail1		= DevCcdBase + 69
 DevCcdWriteThumbnail1		= DevCcdBase + 70
 DevCcdWriteThumbnail1		= DevCcdBase + 71
 
+DevCcdSetExtFilePar		= DevCcdBase + 100
+DevCcdGetExtFilePar		= DevCcdBase + 101
+
 # CCD States
 DevCcdReady			= DevCcdBase + 1
 DevCcdAcquiring			= DevCcdBase + 2
@@ -209,6 +212,10 @@ class TacoCcdAcq(TacoServer):
                                  'setFilePar', 'DevCcdSetFilePar'],
         DevCcdGetFilePar:	[D_VOID_TYPE, D_VAR_STRINGARR, 
                                  'getFilePar', 'DevCcdGetFilePar'],
+        DevCcdSetExtFilePar:	[D_VAR_STRINGARR, D_VOID_TYPE,
+                                 'setExtFilePar', 'DevCcdSetExtFilePar'],
+        DevCcdGetExtFilePar:	[D_STRING_TYPE, D_VAR_STRINGARR, 
+                                 'getExtFilePar', 'DevCcdGetExtFilePar'],
         DevCcdHeader:		[D_STRING_TYPE, D_VOID_TYPE, 
                                  'setFileHeader', 'DevCcdHeader'],
         DevCcdWriteFile:	[D_LONG_TYPE, D_VOID_TYPE, 
@@ -411,6 +418,23 @@ class TacoCcdAcq(TacoServer):
                pars.fileFormat, overwrite]
         par_arr = map(str, arr)
         deb.Return('File pars: %s' % par_arr)
+        return par_arr
+
+    @TACO_SERVER_FUNCT
+    def setExtFilePar(self, pars):
+        stream_idx = int(pars[0])
+        deb.Param('Setting stream %d ext. pars: %s' % (stream_idx, pars[1:]))
+
+    @TACO_SERVER_FUNCT
+    def getExtFilePar(self, stream_idx_str):
+        stream_idx = int(stream_idx_str)
+        active = (stream_idx == 0)
+        pars = CtSaving.Parameters()
+        overwrite = pars.overwritePolicy == CtSaving.Overwrite
+        arr = [stream_idx, active, pars.directory, pars.prefix, pars.suffix,
+               pars.nextNumber, pars.fileFormat, overwrite]
+        par_arr = map(str, arr)
+        deb.Return('Stream %d ext. pars: %s' % stream_idx, par_arr[1:])
         return par_arr
 
     @TACO_SERVER_FUNCT
