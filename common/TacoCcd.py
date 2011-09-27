@@ -220,6 +220,8 @@ class TacoCcdAcq(TacoServer):
                                  'setFileHeader', 'DevCcdHeader'],
         DevCcdWriteFile:	[D_LONG_TYPE, D_VOID_TYPE, 
                                  'writeFile', 'DevCcdWriteFile'],
+        DevCcdWriteAll:		[D_VOID_TYPE, D_VOID_TYPE, 
+                                 'writeConcatFramesFile', 'DevCcdWriteAll'],
         DevCcdSetChannel:	[D_LONG_TYPE, D_VOID_TYPE,
                                  'setChannel', 'DevCcdSetChannel'],
         DevCcdGetChannel:	[D_VOID_TYPE, D_LONG_TYPE, 
@@ -444,6 +446,10 @@ class TacoCcdAcq(TacoServer):
     @TACO_SERVER_FUNCT
     def writeFile(self, frame_nb):
         deb.Param('Writing frame %s to file' % frame_nb)
+      
+    @TACO_SERVER_FUNCT
+    def writeConcatFramesFile(self):
+        deb.Param('Writing all frames to file')
       
     @TACO_SERVER_FUNCT
     def setChannel(self, input_chan):

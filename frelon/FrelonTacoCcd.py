@@ -39,12 +39,18 @@ class FrelonTacoAcq(TacoCcdAcq):
         DevCcdReady:     'Ready: Camera is Idle',
         DevCcdAcquiring: 'Acquiring: Camera is Running',
     }
+
+    DefaultResources = {
+        'espia_dev_nb': 0,
+    }
     
     @DEB_MEMBER_FUNCT
     def __init__(self, dev_name, dev_class=None, cmd_list=None):
         TacoCcdAcq.__init__(self, dev_name, dev_class, cmd_list)
+
+        res_pars = self.getResources(self.DefaultResources)
+        espia_dev_nb = int(res_pars['espia_dev_nb'])
         
-        espia_dev_nb = 0
         self.m_acq = Frelon.FrelonAcq(espia_dev_nb)
         self.m_get_acq_frames = False
 
@@ -252,7 +258,12 @@ class FrelonTacoAcq(TacoCcdAcq):
         
     @TACO_SERVER_FUNCT
     def writeFile(self, frame_nb):
-        self.m_acq.writeFile(frame_nb)
+        self.m_acq.writeFile(frame_nb, 1)
+        
+    @TACO_SERVER_FUNCT
+    def writeConcatFramesFile(self):
+        nb_frames = self.m_acq.getNbConcatFrames()
+        self.m_acq.writeFile(0, nb_frames)
         
     @TACO_SERVER_FUNCT
     def setChannel(self, input_chan):
