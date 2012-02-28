@@ -33,6 +33,8 @@ class FrelonTacoAcq(TacoCcdAcq):
 
     GetAcqFrames   = 0x02
     DisableE2VCorr = 0x10
+
+    LiveNbConcatFrames = 16
     
     StateDesc = {
         DEVFAULT:        'Fault: Camera off or disconnected',
@@ -76,7 +78,6 @@ class FrelonTacoAcq(TacoCcdAcq):
             end = index(msg, ', ImageCounters')
             msg = msg[:end] + '>'
             self.m_acq.resetStatus()
-            self.m_acq.stopAcq()
             raise Exception, msg
         deb.Return('Device state: 0x%08x (%d)' % (self.state, self.state))
         return self.state
@@ -139,7 +140,8 @@ class FrelonTacoAcq(TacoCcdAcq):
     def setNbFrames(self, nb_frames):
         self.m_acq.setNbFrames(nb_frames)
         if self.m_acq.getStripeConcat():
-            self.m_acq.setNbConcatFrames(nb_frames)
+            nb_concat_frames = nb_frames or self.LiveNbConcatFrames
+            self.m_acq.setNbConcatFrames(nb_concat_frames)
     
     @TACO_SERVER_FUNCT
     def getNbFrames(self):
