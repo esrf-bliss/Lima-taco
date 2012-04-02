@@ -62,8 +62,8 @@ class FrelonTacoAcq(TacoCcdAcq):
 
     @TACO_SERVER_FUNCT
     def reset(self):
-        self.m_acq.reset()
-
+        self.m_acq.resetDefaults()
+        
     @TACO_SERVER_FUNCT
     def getState(self):
         deb.Trace('Query device state ...')
