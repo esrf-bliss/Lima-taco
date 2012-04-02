@@ -19,8 +19,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 ############################################################################
-from TacoCcd import *
 from Lima import Frelon
+from TacoCcd import *
 import gc
 
 DebParams.setTypeFlags(DebParams.AllFlags)
