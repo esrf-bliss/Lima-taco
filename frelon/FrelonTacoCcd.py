@@ -432,6 +432,7 @@ class FrelonTacoAcq(TacoCcdAcq):
     
     @TACO_SERVER_FUNCT
     def readConcatFrames(self, frame_size):
+        deb.Param('frame_size=%s' % frame_size)
         frame_dim = self.getFrameDim()
         nb_frames = frame_size / frame_dim.getMemSize()
         s = self.m_acq.readFrames(0, nb_frames)
