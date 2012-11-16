@@ -75,7 +75,7 @@ class FrelonTacoAcq(TacoCcdAcq):
             self.state = DevCcdReady
         else:
             msg = 'Acquisition error: %s' % (ct_status)
-            end = index(msg, ', ImageCounters')
+            end = msg.index(', ImageCounters')
             msg = msg[:end] + '>'
             self.m_acq.resetStatus()
             raise Exception, msg
